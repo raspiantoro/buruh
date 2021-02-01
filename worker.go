@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/rs/xid"
 )
 
 type CtxKey string
@@ -17,12 +17,12 @@ var (
 
 type Worker struct {
 	config    *Config
-	ID        uuid.UUID
+	ID        xid.ID
 	startTime time.Time
 }
 
 func NewWorker(cfg *Config) *Worker {
-	uid := uuid.NewV4()
+	uid := xid.New()
 
 	if cfg.Debug {
 		log.Printf("Spawn new worker, id: %s", uid.String())
@@ -35,7 +35,7 @@ func NewWorker(cfg *Config) *Worker {
 	}
 }
 
-func (w *Worker) Start(job *Job, ch chan<- *Worker) {
+func (w *Worker) Start(job Job, ch chan<- *Worker) {
 	if w.config.Debug {
 		log.Printf("Execute job: %s, with worker: %s", job.ID.String(), w.ID.String())
 	}

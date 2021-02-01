@@ -28,7 +28,7 @@ func New(cfg *Config) *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) Dispatch(job *Job) {
+func (d *Dispatcher) Dispatch(job Job) {
 	d.jobs.Enqueue(job)
 }
 

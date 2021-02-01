@@ -26,16 +26,16 @@ var fn = func(id int, wg *sync.WaitGroup) buruh.Task {
 
 func main() {
 	dispatcher := buruh.New(&buruh.Config{
-		MaxWorkerNum: 10,
-		MinWorkerNum: 5,
+		MaxWorkerNum: 10000,
+		MinWorkerNum: 50,
 	})
 
-	numOfJob := 100
+	numOfJob := 50000
 	wg := sync.WaitGroup{}
 	wg.Add(numOfJob)
 
 	for i := 1; i <= numOfJob; i++ {
-		job := buruh.NewJob(fn(i, &wg))
+		job := buruh.NewJob(fn(i, &wg), false)
 		dispatcher.Dispatch(job)
 	}
 

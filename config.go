@@ -1,6 +1,8 @@
 package buruh
 
-import "time"
+import (
+	"time"
+)
 
 type Config struct {
 	MaxWorkerNum  uint
