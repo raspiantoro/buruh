@@ -3,22 +3,26 @@ package buruh
 import (
 	"context"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/rs/xid"
 )
 
 type Task func(ctx context.Context)
 
 type Job struct {
-	ID   uuid.UUID
+	ID   xid.ID
 	task Task
 }
 
-func NewJob(task Task) (job *Job) {
-	uid := uuid.NewV4()
+func NewJob(task Task, withID bool) (job Job) {
 
-	job = &Job{
-		ID:   uid,
-		task: task,
+	// job = Job{
+	// 	task: task,
+	// }
+
+	job.task = task
+
+	if withID {
+		job.ID = xid.New()
 	}
 
 	return

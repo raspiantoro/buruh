@@ -1,35 +1,37 @@
 package buruh
 
-import (
-	"log"
-)
+import "context"
 
 type Dispatcher struct {
-	config     *Config
-	jobs       *Queue
-	pool       *Pool
-	stopSignal chan bool
+	config *Config
+	pool   *Pool
+	queue  *Queue
+	cancel context.CancelFunc
+	// signalStop chan bool
 }
 
-func New(cfg *Config) *Dispatcher {
+func New(ctx context.Context, cfg *Config) *Dispatcher {
 	q := NewQueue(cfg)
-	p := NewPool(cfg)
+	ctx, cancel := context.WithCancel(ctx)
+
+	p := NewPool(ctx, q, cfg)
 
 	d := &Dispatcher{
-		config:     cfg,
-		jobs:       q,
-		pool:       p,
-		stopSignal: make(chan bool),
+		config: cfg,
+		pool:   p,
+		queue:  q,
+		cancel: cancel,
+		// signalStop: make(chan bool),
 	}
 
-	p.Init()
-	d.run()
+	// d.collect()
 
 	return d
 }
 
-func (d *Dispatcher) Dispatch(job *Job) {
-	d.jobs.Enqueue(job)
+func (d *Dispatcher) Dispatch(job Job) {
+	d.queue.Enqueue(job)
+	// d.pool.Submit(job)
 }
 
 func (d *Dispatcher) Debug(t bool) *Dispatcher {
@@ -37,41 +39,24 @@ func (d *Dispatcher) Debug(t bool) *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) run() {
-	go func() {
-		for {
-			select {
-			case <-d.stopSignal:
-				return
-			default:
-				err := d.exec()
-				if err != nil {
-					continue
-				}
-
-			}
-		}
-	}()
-
-}
-
-func (d *Dispatcher) exec() (err error) {
-	job, err := d.jobs.Dequeue()
-	if err != nil {
-		return
-	}
-
-	if d.config.Debug {
-		log.Println("Waiting for available worker")
-	}
-
-	worker := d.pool.Get()
-
-	go worker.Start(job, d.pool.workers)
-
-	return
-}
+// func (d *Dispatcher) collect() {
+// 	go func() {
+// 		for {
+// 			select {
+// 			case <-d.signalStop:
+// 				return
+// 			default:
+// 				job, err := d.queue.Dequeue()
+// 				if err != nil {
+// 					continue
+// 				}
+// 				d.pool.Submit(job)
+// 			}
+// 		}
+// 	}()
+// }
 
 func (d *Dispatcher) Stop() {
-	d.stopSignal <- true
+	// d.signalStop <- true
+	d.cancel()
 }

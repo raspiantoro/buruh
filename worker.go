@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/rs/xid"
 )
 
 type CtxKey string
@@ -17,12 +17,12 @@ var (
 
 type Worker struct {
 	config    *Config
-	ID        uuid.UUID
+	ID        xid.ID
 	startTime time.Time
 }
 
 func NewWorker(cfg *Config) *Worker {
-	uid := uuid.NewV4()
+	uid := xid.New()
 
 	if cfg.Debug {
 		log.Printf("Spawn new worker, id: %s", uid.String())
@@ -35,20 +35,35 @@ func NewWorker(cfg *Config) *Worker {
 	}
 }
 
-func (w *Worker) Start(job *Job, ch chan<- *Worker) {
-	if w.config.Debug {
-		log.Printf("Execute job: %s, with worker: %s", job.ID.String(), w.ID.String())
+func (w *Worker) Start(ctx context.Context, queue *Queue) {
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+
+			job, err := queue.Dequeue()
+			if err != nil {
+				continue
+			}
+
+			if w.config.Debug {
+				log.Printf("Execute job: %s, with worker: %s", job.ID.String(), w.ID.String())
+			}
+
+			ctx := context.Background()
+			ctx = context.WithValue(ctx, CtxWorkerKey, w.ID.String())
+			ctx = context.WithValue(ctx, CtxJobKey, job.ID.String())
+
+			job.Do(ctx)
+			time.Sleep(w.config.CoolingTime)
+
+			if w.config.Debug {
+				log.Printf("Finish job: %s, with worker: %s", job.ID.String(), w.ID.String())
+			}
+		}
+
 	}
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, CtxWorkerKey, w.ID.String())
-	ctx = context.WithValue(ctx, CtxJobKey, job.ID.String())
-
-	job.Do(ctx)
-
-	if w.config.Debug {
-		log.Printf("Finish job: %s, with worker: %s", job.ID.String(), w.ID.String())
-	}
-
-	ch <- w
 }
