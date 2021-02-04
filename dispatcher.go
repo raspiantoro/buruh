@@ -13,7 +13,7 @@ type Dispatcher struct {
 
 func New(cfg *Config) *Dispatcher {
 	// q := NewQueue(cfg)
-	p := NewPool(cfg)
+	// p := NewPool(cfg)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -21,13 +21,13 @@ func New(cfg *Config) *Dispatcher {
 	d := &Dispatcher{
 		config: cfg,
 		// jobs:   q,
-		jobs:       make(chan Job, 100),
-		pool:       p,
+		jobs: make(chan Job, 100),
+		// pool:       p,
 		stopSignal: make(chan bool),
 		cancel:     cancel,
 	}
 
-	p.Init(ctx)
+	// p.Init(ctx)
 	d.run()
 
 	return d
@@ -51,7 +51,7 @@ func (d *Dispatcher) run() {
 				d.cancel()
 				return
 			default:
-				d.pool.jobsQueue <- d.jobs
+				// d.pool.jobsQueue <- d.jobs
 			}
 		}
 	}()

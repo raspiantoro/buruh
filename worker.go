@@ -18,7 +18,6 @@ var (
 type Worker struct {
 	config    *Config
 	ID        xid.ID
-	jobQueue  chan Job
 	startTime time.Time
 }
 
@@ -26,13 +25,12 @@ func NewWorker(cfg *Config) *Worker {
 	uid := xid.New()
 
 	if cfg.Debug {
-		// log.Printf("Spawn new worker, id: %s", uid.String())
+		log.Printf("Spawn new worker, id: %s", uid.String())
 	}
 
 	return &Worker{
-		ID:     uid,
-		config: cfg,
-		// jobQueue:  make(chan Job, 100),
+		ID:        uid,
+		config:    cfg,
 		startTime: time.Now(),
 	}
 }

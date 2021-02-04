@@ -7,24 +7,24 @@ import (
 
 type Pool struct {
 	config      *Config
-	workers     chan *Worker
-	jobsQueue   chan chan Job
+	jobsQueue   chan Job
 	availWorker uint
 }
 
-func NewPool(cfg *Config) *Pool {
+func NewPool(ctx context.Context, cfg *Config) *Pool {
 
 	p := &Pool{
 		config:      cfg,
-		workers:     make(chan *Worker, cfg.MaxWorkerNum),
-		jobsQueue:   make(chan chan Job, 100),
+		jobsQueue:   make(chan Job, 100),
 		availWorker: 0,
 	}
+
+	p.init(ctx)
 
 	return p
 }
 
-func (p *Pool) Init(ctx context.Context) {
+func (p *Pool) init(ctx context.Context) {
 	for i := 0; i < int(p.config.MinWorkerNum); i++ {
 		if p.config.Debug {
 			log.Println("Init new worker")
@@ -34,7 +34,7 @@ func (p *Pool) Init(ctx context.Context) {
 	}
 }
 
-func (p *Pool) submit(job chan Job) {
+func (p *Pool) Submit(job Job) {
 	p.jobsQueue <- job
 }
 
@@ -45,8 +45,7 @@ func (p *Pool) addNewWorker(ctx context.Context) {
 		}
 
 		w := NewWorker(p.config)
-		p.workers <- w
-		//go w.Start(ctx, p.jobsQueue)
+		go w.Start(ctx, p.jobsQueue)
 		p.availWorker++
 	}
 }
