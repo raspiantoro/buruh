@@ -46,7 +46,7 @@ func (p *Pool) addNewWorker(ctx context.Context) {
 
 		w := NewWorker(p.config)
 		p.workers <- w
-		go w.Start(ctx, p.jobsQueue)
+		//go w.Start(ctx, p.jobsQueue)
 		p.availWorker++
 	}
 }
