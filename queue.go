@@ -1,6 +1,8 @@
 package buruh
 
-import "sync"
+import (
+	"sync"
+)
 
 // Queue defince struct for job queueing
 type Queue struct {

@@ -3,6 +3,7 @@ package buruh_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/raspiantoro/buruh"
 )
@@ -30,11 +31,16 @@ func BenchmarkWithoutBuruh(b *testing.B) {
 	}
 }
 
+var globalCtx = context.Background()
+var dispatcher = buruh.New(globalCtx, &buruh.Config{
+	MaxWorkerNum: 500000,
+	MinWorkerNum: 500000,
+	CoolingTime:  200 * time.Millisecond,
+	WarmTime:     500 * time.Millisecond,
+	BackoffTime:  200 * time.Millisecond,
+})
+
 func BenchmarkWithBuruh(b *testing.B) {
-	dispatcher := buruh.New(&buruh.Config{
-		MaxWorkerNum: 100,
-		MinWorkerNum: 100,
-	})
 
 	done := make(chan bool)
 
