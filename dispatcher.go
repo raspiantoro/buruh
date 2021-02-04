@@ -3,28 +3,28 @@ package buruh
 import "context"
 
 type Dispatcher struct {
-	config     *Config
-	pool       *Pool
-	queue      *Queue
-	cancel     context.CancelFunc
-	signalStop chan bool
+	config *Config
+	pool   *Pool
+	queue  *Queue
+	cancel context.CancelFunc
+	// signalStop chan bool
 }
 
 func New(ctx context.Context, cfg *Config) *Dispatcher {
 	q := NewQueue(cfg)
 	ctx, cancel := context.WithCancel(ctx)
 
-	p := NewPool(ctx, cfg)
+	p := NewPool(ctx, q, cfg)
 
 	d := &Dispatcher{
-		config:     cfg,
-		pool:       p,
-		queue:      q,
-		cancel:     cancel,
-		signalStop: make(chan bool),
+		config: cfg,
+		pool:   p,
+		queue:  q,
+		cancel: cancel,
+		// signalStop: make(chan bool),
 	}
 
-	d.collect()
+	// d.collect()
 
 	return d
 }
@@ -39,24 +39,24 @@ func (d *Dispatcher) Debug(t bool) *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) collect() {
-	go func() {
-		for {
-			select {
-			case <-d.signalStop:
-				return
-			default:
-				job, err := d.queue.Dequeue()
-				if err != nil {
-					continue
-				}
-				d.pool.Submit(job)
-			}
-		}
-	}()
-}
+// func (d *Dispatcher) collect() {
+// 	go func() {
+// 		for {
+// 			select {
+// 			case <-d.signalStop:
+// 				return
+// 			default:
+// 				job, err := d.queue.Dequeue()
+// 				if err != nil {
+// 					continue
+// 				}
+// 				d.pool.Submit(job)
+// 			}
+// 		}
+// 	}()
+// }
 
 func (d *Dispatcher) Stop() {
-	d.signalStop <- true
+	// d.signalStop <- true
 	d.cancel()
 }

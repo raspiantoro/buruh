@@ -27,18 +27,18 @@ func main() {
 		elapse time.Duration
 	)
 
-	numOfJob := 5000000
+	numOfJob := 100000
 	wg := sync.WaitGroup{}
 
 	ctx := context.Background()
 
 	wg.Add(numOfJob)
 	cfg := &buruh.Config{
-		MaxWorkerNum: 10000,
-		MinWorkerNum: 10000,
-		CoolingTime:  100 * time.Microsecond,
-		WarmTime:     500 * time.Microsecond,
-		BackoffTime:  100 * time.Microsecond,
+		MaxWorkerNum: 10,
+		MinWorkerNum: 10,
+		CoolingTime:  1 * time.Microsecond,
+		// WarmTime:     500 * time.Microsecond,
+		// BackoffTime:  100 * time.Microsecond,
 	}
 
 	loopStart := time.Now()

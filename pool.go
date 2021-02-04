@@ -6,16 +6,18 @@ import (
 )
 
 type Pool struct {
-	config      *Config
-	jobsQueue   chan Job
+	config *Config
+	// jobsQueue   chan Job
+	jobsQueue   *Queue
 	availWorker uint
 }
 
-func NewPool(ctx context.Context, cfg *Config) *Pool {
+func NewPool(ctx context.Context, jobsQueue *Queue, cfg *Config) *Pool {
 
 	p := &Pool{
-		config:      cfg,
-		jobsQueue:   make(chan Job, 100),
+		config: cfg,
+		// jobsQueue:   make(chan Job, 100),
+		jobsQueue:   jobsQueue,
 		availWorker: 0,
 	}
 
@@ -34,9 +36,9 @@ func (p *Pool) init(ctx context.Context) {
 	}
 }
 
-func (p *Pool) Submit(job Job) {
-	p.jobsQueue <- job
-}
+// func (p *Pool) Submit(job Job) {
+// 	p.jobsQueue <- job
+// }
 
 func (p *Pool) addNewWorker(ctx context.Context) {
 	if p.availWorker < p.config.MaxWorkerNum {

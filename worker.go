@@ -35,13 +35,19 @@ func NewWorker(cfg *Config) *Worker {
 	}
 }
 
-func (w *Worker) Start(ctx context.Context, jobCh chan Job) {
-
-	var start bool = true
+func (w *Worker) Start(ctx context.Context, queue *Queue) {
 
 	for {
 		select {
-		case job := <-jobCh:
+		case <-ctx.Done():
+			return
+		default:
+
+			job, err := queue.Dequeue()
+			if err != nil {
+				continue
+			}
+
 			if w.config.Debug {
 				log.Printf("Execute job: %s, with worker: %s", job.ID.String(), w.ID.String())
 			}
@@ -56,17 +62,6 @@ func (w *Worker) Start(ctx context.Context, jobCh chan Job) {
 			if w.config.Debug {
 				log.Printf("Finish job: %s, with worker: %s", job.ID.String(), w.ID.String())
 			}
-		case <-ctx.Done():
-			return
-		default:
-			if start {
-				start = false
-				time.Sleep(w.config.WarmTime)
-				continue
-			}
-
-			time.Sleep(w.config.BackoffTime)
-			continue
 		}
 
 	}
