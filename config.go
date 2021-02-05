@@ -9,7 +9,7 @@ type Config struct {
 	MinWorkerNum  uint
 	MaxWorkerLife time.Duration
 	CoolingTime   time.Duration
-	WarmTime      time.Duration
+	HearbeatRate  time.Duration
 	BackoffTime   time.Duration
 	Debug         bool
 }

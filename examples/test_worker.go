@@ -27,7 +27,7 @@ func main() {
 		elapse time.Duration
 	)
 
-	numOfJob := 100000
+	numOfJob := 10000000
 	wg := sync.WaitGroup{}
 
 	ctx := context.Background()
@@ -36,7 +36,8 @@ func main() {
 	cfg := &buruh.Config{
 		MaxWorkerNum: 10,
 		MinWorkerNum: 10,
-		CoolingTime:  1 * time.Microsecond,
+		CoolingTime:  1 * time.Nanosecond,
+		HearbeatRate: 1 * time.Nanosecond,
 		// WarmTime:     500 * time.Microsecond,
 		// BackoffTime:  100 * time.Microsecond,
 	}

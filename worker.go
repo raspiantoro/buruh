@@ -36,8 +36,8 @@ func NewWorker(cfg *Config) *Worker {
 }
 
 func (w *Worker) Start(ctx context.Context, queue *Queue) {
-
-	for {
+	heartBeat := time.NewTicker(w.config.HearbeatRate)
+	for range heartBeat.C {
 		select {
 		case <-ctx.Done():
 			return
