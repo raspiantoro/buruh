@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -11,58 +12,36 @@ import (
 
 var fn = func(id int, wg *sync.WaitGroup) buruh.Task {
 	return func(ctx context.Context) {
-		// wKey := ctx.Value(buruh.CtxWorkerKey).(string)
-		// jKey := ctx.Value(buruh.CtxJobKey).(string)
+		rand.Seed(time.Now().UnixNano())
+		n := rand.Intn(1)
+		time.Sleep(time.Duration(n) * time.Second)
 
-		// fmt.Printf("Method #%d is executing by job: %s with worker: %s\n", id, jKey, wKey)
+		wKey := ctx.Value(buruh.CtxWorkerKey).(string)
+		jKey := ctx.Value(buruh.CtxJobKey).(string)
 
+		fmt.Printf("Method #%d is executing by job: %s with worker: %s\n", id, jKey, wKey)
 		wg.Done()
 	}
 }
 
 func main() {
-	var (
-		start  time.Time
-		elapse time.Duration
-	)
-
 	ctx := context.Background()
+	dispatcher := buruh.New(ctx, &buruh.Config{
+		QueueSize:    5,
+		MaxWorkerNum: 3,
+		MinWorkerNum: 3,
+	})
 
-	numOfJob := 500000
+	numOfJob := 20
 	wg := sync.WaitGroup{}
 	wg.Add(numOfJob)
 
-	dispatcher := buruh.New(ctx, &buruh.Config{
-		MaxWorkerNum: 10000,
-		MinWorkerNum: 10000,
-		// Debug:        true,
-	})
-	defer dispatcher.Stop()
-	start = time.Now()
-
 	for i := 1; i <= numOfJob; i++ {
-		job := buruh.NewJob(fn(i, &wg), false)
+		job := buruh.NewJob(fn(i, &wg), true)
 		dispatcher.Dispatch(job)
 	}
 
 	wg.Wait()
 
-	elapse = time.Since(start)
-	fmt.Println(elapse)
-
-	wg.Add(numOfJob)
-	start = time.Now()
-
-	for i := 1; i <= numOfJob; i++ {
-		go func(i int) {
-			f := fn(i, &wg)
-			f(ctx)
-		}(i)
-	}
-
-	wg.Wait()
-
-	elapse = time.Since(start)
-	fmt.Println(elapse)
-
+	dispatcher.Stop()
 }

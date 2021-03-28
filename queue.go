@@ -1,68 +1,89 @@
 package buruh
 
 import (
-	"sync"
+	"errors"
+	"sync/atomic"
 )
 
-// Queue defince struct for job queueing
-type Queue struct {
-	mu     sync.Mutex
-	config *Config
-	jobs   []Job
+type item struct {
+	job     *Job
+	enqueue bool
 }
 
-// NewQueue job queueing constructor
-func NewQueue(cfg *Config) *Queue {
-	return &Queue{
-		config: cfg,
-		jobs:   []Job{},
+type CircularQueue struct {
+	jobs              []item
+	readPos, writePos int64
+	count             int64
+}
+
+func NewCircularQueue(size int) *CircularQueue {
+	return &CircularQueue{
+		jobs:     make([]item, size),
+		writePos: 0,
 	}
 }
 
-// Enqueue add new job to queue
-func (q *Queue) Enqueue(job Job) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
+func (c *CircularQueue) Dequeue() (job *Job, err error) {
 
-	q.jobs = append(q.jobs, job)
-}
+	for {
+		if !c.jobs[c.readPos].enqueue {
+			err = errors.New("queue is empty")
+			return
+		}
 
-// Dequeue retrieve first job from queue
-func (q *Queue) Dequeue() (job Job, err error) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
+		var newValue int64
+		oldValue := c.readPos
 
-	if len(q.jobs) == 0 {
-		err = errEmptyQueue
-		return
+		if oldValue == int64(len(c.jobs)-1) {
+			newValue = 0
+		} else {
+			newValue = oldValue + 1
+		}
+
+		job = c.jobs[oldValue].job
+
+		if job == nil {
+			continue
+		}
+
+		swapped := atomic.CompareAndSwapInt64(&c.readPos, oldValue, newValue)
+		if swapped {
+			c.jobs[oldValue].enqueue = false
+
+			return
+		}
+
 	}
 
-	job = q.jobs[0:1][0]
-	q.jobs = q.jobs[1:]
-	return
 }
 
-// First get first job element in queue
-func (q *Queue) First() (job Job, err error) {
-	if len(q.jobs) == 0 {
-		err = errEmptyQueue
-		return
+func (c *CircularQueue) Enqueue(job *Job) (err error) {
+
+	for {
+		if c.jobs[c.writePos].enqueue {
+			err = errors.New("queue is full")
+			return
+		}
+
+		var newValue int64
+		oldValue := c.writePos
+
+		if oldValue == int64(len(c.jobs)-1) {
+			newValue = 0
+		} else {
+			newValue = oldValue + 1
+		}
+
+		swapped := atomic.CompareAndSwapInt64(&c.writePos, oldValue, newValue)
+		if swapped {
+			c.jobs[oldValue].job = job
+			c.jobs[oldValue].enqueue = true
+
+			atomic.AddInt64(&c.count, 1)
+
+			return
+		}
+
 	}
-	job = q.jobs[0]
-	return
-}
 
-// Last get last job element in queue
-func (q *Queue) Last() (job Job, err error) {
-	if len(q.jobs) == 0 {
-		err = errEmptyQueue
-		return
-	}
-	job = q.jobs[len(q.jobs)-1]
-	return
-}
-
-// Show get all job element in queue
-func (q *Queue) Show() []Job {
-	return q.jobs
 }

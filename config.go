@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	QueueSize     uint
 	MaxWorkerNum  uint
 	MinWorkerNum  uint
 	MaxWorkerLife time.Duration

@@ -9,17 +9,16 @@ import (
 type Task func(ctx context.Context)
 
 type Job struct {
-	ID   xid.ID
-	task Task
+	ID    xid.ID
+	task  Task
+	taken bool
 }
 
-func NewJob(task Task, withID bool) (job Job) {
+func NewJob(task Task, withID bool) (job *Job) {
 
-	// job = Job{
-	// 	task: task,
-	// }
-
-	job.task = task
+	job = &Job{
+		task: task,
+	}
 
 	if withID {
 		job.ID = xid.New()

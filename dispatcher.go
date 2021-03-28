@@ -1,18 +1,24 @@
 package buruh
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Dispatcher struct {
 	config *Config
 	pool   *Pool
-	queue  *Queue
+	queue  *CircularQueue
 	cancel context.CancelFunc
-	// signalStop chan bool
 }
 
 func New(ctx context.Context, cfg *Config) *Dispatcher {
-	q := NewQueue(cfg)
+	q := NewCircularQueue(int(cfg.QueueSize))
 	ctx, cancel := context.WithCancel(ctx)
+
+	if cfg.HearbeatRate == 0 {
+		cfg.HearbeatRate = time.Nanosecond * 5
+	}
 
 	p := NewPool(ctx, q, cfg)
 
@@ -21,17 +27,19 @@ func New(ctx context.Context, cfg *Config) *Dispatcher {
 		pool:   p,
 		queue:  q,
 		cancel: cancel,
-		// signalStop: make(chan bool),
 	}
-
-	// d.collect()
 
 	return d
 }
 
-func (d *Dispatcher) Dispatch(job Job) {
-	d.queue.Enqueue(job)
-	// d.pool.Submit(job)
+func (d *Dispatcher) Dispatch(job *Job) {
+	for {
+		err := d.queue.Enqueue(job)
+		if err == nil {
+			return
+		}
+	}
+
 }
 
 func (d *Dispatcher) Debug(t bool) *Dispatcher {
@@ -39,24 +47,6 @@ func (d *Dispatcher) Debug(t bool) *Dispatcher {
 	return d
 }
 
-// func (d *Dispatcher) collect() {
-// 	go func() {
-// 		for {
-// 			select {
-// 			case <-d.signalStop:
-// 				return
-// 			default:
-// 				job, err := d.queue.Dequeue()
-// 				if err != nil {
-// 					continue
-// 				}
-// 				d.pool.Submit(job)
-// 			}
-// 		}
-// 	}()
-// }
-
 func (d *Dispatcher) Stop() {
-	// d.signalStop <- true
 	d.cancel()
 }

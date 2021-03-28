@@ -35,16 +35,23 @@ func NewWorker(cfg *Config) *Worker {
 	}
 }
 
-func (w *Worker) Start(ctx context.Context, queue *Queue) {
+func (w *Worker) Start(ctx context.Context, queue *CircularQueue) {
 	heartBeat := time.NewTicker(w.config.HearbeatRate)
 	for range heartBeat.C {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-
 			job, err := queue.Dequeue()
 			if err != nil {
+				if w.config.Debug {
+					log.Println(err)
+				}
+
+				continue
+			}
+
+			if job == nil {
 				continue
 			}
 
@@ -65,5 +72,4 @@ func (w *Worker) Start(ctx context.Context, queue *Queue) {
 		}
 
 	}
-
 }
